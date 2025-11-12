@@ -2,9 +2,13 @@
 import { MailpitApi } from "@/clients/mailpit";
 
 export class MailActions {
-    constructor(private mailpit = new MailpitApi()) {}
+    private mailpit: MailpitApi;
 
-    protected sleep(ms: number) {
+    constructor(mailpit: MailpitApi = new MailpitApi()) {
+        this.mailpit = mailpit;
+    }
+
+    protected sleep(ms: number): Promise<void> {
         return new Promise((res) => setTimeout(res, ms));
     }
 

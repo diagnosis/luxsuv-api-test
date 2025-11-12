@@ -1,14 +1,13 @@
-// src/actions/admin-actions.ts
 import { BaseActions } from "@/actions/base-actions";
 import { MailActions } from "@/actions/mail-actions";
 import { AdminApi } from "@/clients/admin-api";
 
 export class AdminActions extends BaseActions {
-    constructor(
-        private mailActions: MailActions = new MailActions(),
-        private adminApi: AdminApi = new AdminApi()
-    ) {
-        super();
+    private adminApi: AdminApi;
+
+    constructor(mailActions: MailActions = new MailActions(), adminApi: AdminApi = new AdminApi()) {
+        super(undefined, mailActions);
+        this.adminApi = adminApi;
     }
 
     private extractApplicationId(textOrHtml: string): string | null {
@@ -23,12 +22,13 @@ export class AdminActions extends BaseActions {
         return null;
     }
 
-    private async findDriverAppIdByEmail(driverEmail: string, timeoutMs = 20_000) {
-        // Poll Mailpit until the “Driver email verified – review needed” mail arrives
-        const full = await this.mailActions.waitAndGetFirstFull(driverEmail, timeoutMs, 800);
+    private async findDriverAppIdByEmail(driverEmail: string, timeoutMs = 20_000): Promise<string> {
+        const full = await this.mail.waitAndGetFirstFull(driverEmail, timeoutMs, 800);
         const body = (full?.Text ?? "") + "\n" + (full?.HTML ?? "");
         const appId = this.extractApplicationId(body);
-        if (!appId) throw new Error(`ApplicationID not found for ${driverEmail}`);
+        if (!appId) {
+            throw new Error(`ApplicationID not found for ${driverEmail}`);
+        }
         return appId;
     }
 
@@ -43,10 +43,8 @@ export class AdminActions extends BaseActions {
     ) {
         const adminEmail = process.env.ADMIN_EMAIL!;
         const adminPass = process.env.ADMIN_PASS!;
-        const {accessToken} = await this.login(adminEmail, adminPass);
+        const { accessToken } = await this.login(adminEmail, adminPass);
 
-
-        // set auth for admin endpoints
         this.adminApi.setBearer(accessToken);
 
         try {
@@ -54,12 +52,13 @@ export class AdminActions extends BaseActions {
             const res = await this.adminApi.reviewDriverApplication(appId, action, notes);
 
             if (res.status !== 200) {
-                throw new Error(`reviewDriverApplication failed: ${res.status} ${JSON.stringify(res.data)}`);
+                throw new Error(
+                    `Driver application ${action} failed: ${res.status} ${JSON.stringify(res.data)}`
+                );
             }
 
             return { appId, res };
         } finally {
-            // important if tests run in parallel
             this.adminApi.clearBearer();
         }
     }

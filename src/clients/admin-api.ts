@@ -1,4 +1,3 @@
-// src/clients/admin-api.ts
 import axios, { AxiosInstance } from "axios";
 
 export class AdminApi {
@@ -10,13 +9,16 @@ export class AdminApi {
             timeout: 15_000,
             validateStatus: () => true,
         });
-        if (token) this.setBearer(token);
+        if (token) {
+            this.setBearer(token);
+        }
     }
 
-    setBearer(token: string) {
+    setBearer(token: string): void {
         this.client.defaults.headers.common.Authorization = `Bearer ${token}`;
     }
-    clearBearer() {
+
+    clearBearer(): void {
         delete this.client.defaults.headers.common.Authorization;
     }
 

@@ -1,11 +1,11 @@
 import { httpApi } from "@/clients/http";
 
 export class AuthApi {
-    setBearer(token: string) {
+    setBearer(token: string): void {
         httpApi.defaults.headers.common.Authorization = `Bearer ${token}`;
     }
 
-    clearBearer() {
+    clearBearer(): void {
         delete httpApi.defaults.headers.common.Authorization;
     }
 
